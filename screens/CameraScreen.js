@@ -12,13 +12,19 @@ import {
   SafeAreaView,
 } from "react-native";
 import { RNCamera } from "react-native-camera";
-import axios from "axios";
+
+import CameraMask from "../components/CameraMask";
+import BackButton from "../components/BackButton";
+import RecognitionModal from "../components/RecognitionModal";
 
 const screenWidth = Math.round(Dimensions.get("window").width);
 const screenHeight = Math.round(Dimensions.get("window").height);
+const cameraHeight = (screenWidth * 4) / 3;
 
 const CameraScreen = ({ navigation }) => {
-  const [errorMessage, setErrorMessage] = useState("Hi");
+  const [detecting, setDetecting] = useState(true);
+
+  const [resultMessage, setResultMessage] = useState("인식중 입니다.");
   const matchFace = async (faceImage) => {
     let formdata = new FormData();
     formdata.append("image", {
@@ -40,16 +46,24 @@ const CameraScreen = ({ navigation }) => {
       .then((response) => response.json())
       .then((json) => {
         if (json.match === false) {
+          const message = json.result.message;
+          if (message === "OK") {
+            setResultMessage("미등록자 입니다.");
+          } else if (message == "Cannot find face in request image.") {
+            setResultMessage("Cannot find face.");
+          }
+          console.log(message);
           takePicture();
-          setErrorMessage(json.result.message);
-          console.log(json.result.message);
+          // setResultMessage("인식중 입니다.");
         } else {
-          navigation.navigate("FinishScreen", { uid: json.uid });
+          setResultMessage(json.uid + "님 출석 완료되었습니다.");
+          // navigation.navigate("FinishScreen", { uid: json.uid });
         }
       })
       .catch((error) => console.log(error))
       .finally(() => {});
   };
+
   const takePicture = async () => {
     try {
       if (camera) {
@@ -66,8 +80,6 @@ const CameraScreen = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {}, []);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.cameraPreviewContainer}>
@@ -76,12 +88,15 @@ const CameraScreen = ({ navigation }) => {
           playSoundOnCapture={false}
           style={styles.camera}
           captureAudio={false}
+          ratio="4:3"
           onCameraReady={takePicture}
           ref={(ref) => {
             camera = ref;
           }}
         >
-          <Text>{errorMessage}</Text>
+          <CameraMask />
+          <BackButton goBack={navigation.goBack} />
+          <RecognitionModal message={resultMessage} />
         </RNCamera>
       </View>
     </SafeAreaView>
@@ -94,14 +109,17 @@ const styles = StyleSheet.create({
   },
   cameraPreviewContainer: {
     flex: 1,
-    alignItems: "center",
-    paddingTop: screenHeight * 0.03947,
-    justifyContent: "center",
-    height: screenHeight,
+    // marginTop: 500,
   },
   camera: {
     flex: 1,
+    alignSelf: "center",
+
+    // position: "absolute",
+    // width: screenWidth,
+    height: cameraHeight,
     width: screenWidth,
+    overflow: "hidden",
   },
 });
 
