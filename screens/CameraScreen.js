@@ -5,9 +5,6 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
-  Image,
-  StatusBar,
-  BackHandler,
   Platform,
   SafeAreaView,
 } from "react-native";
@@ -23,7 +20,7 @@ const cameraHeight = (screenWidth * 4) / 3;
 
 const CameraScreen = ({ navigation }) => {
   const [detecting, setDetecting] = useState(true);
-
+  const [finished, setFinished] = useState(false);
   const [resultMessage, setResultMessage] = useState("인식중 입니다.");
   const matchFace = async (faceImage) => {
     let formdata = new FormData();
@@ -54,11 +51,16 @@ const CameraScreen = ({ navigation }) => {
           }
           console.log(message);
           takePicture();
-          // setResultMessage("인식중 입니다.");
         } else {
-          setResultMessage(json.uid + "님 출석 완료되었습니다.");
-          // navigation.navigate("FinishScreen", { uid: json.uid });
+          let uid = decodeURIComponent(json.uid);
+          setResultMessage(uid + "님 출석 완료되었습니다.");
+          setFinished(true);
+          setTimeout(() => {
+            navigation.navigate("FinishScreen", { uid: uid });
+          }, 2000);
+          // @FIXME 여기에 Rest API사용하셔서 uid를 보내시면 됩니다.
         }
+        setDetecting(false);
       })
       .catch((error) => console.log(error))
       .finally(() => {});
@@ -80,6 +82,15 @@ const CameraScreen = ({ navigation }) => {
     }
   };
 
+  useEffect(() => {
+    if (!finished && detecting === false) {
+      console.log("useEffect triggered");
+      setTimeout(() => {
+        setDetecting(true);
+      }, 2000);
+    }
+  }, [detecting]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.cameraPreviewContainer}>
@@ -96,7 +107,11 @@ const CameraScreen = ({ navigation }) => {
         >
           <CameraMask />
           <BackButton goBack={navigation.goBack} />
-          <RecognitionModal message={resultMessage} />
+          {detecting ? (
+            <RecognitionModal message="인식중 입니다." />
+          ) : (
+            <RecognitionModal message={resultMessage} />
+          )}
         </RNCamera>
       </View>
     </SafeAreaView>
@@ -109,14 +124,10 @@ const styles = StyleSheet.create({
   },
   cameraPreviewContainer: {
     flex: 1,
-    // marginTop: 500,
   },
   camera: {
     flex: 1,
     alignSelf: "center",
-
-    // position: "absolute",
-    // width: screenWidth,
     height: cameraHeight,
     width: screenWidth,
     overflow: "hidden",

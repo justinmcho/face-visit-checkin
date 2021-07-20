@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     marginBottom: screenHeight * 0.05,
-    // marginTop: screenHeight * 0.3,
   },
   welcomeText: {
     color: "#FFFFFF",
