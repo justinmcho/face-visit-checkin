@@ -58,7 +58,19 @@ const CameraScreen = ({ navigation }) => {
           setTimeout(() => {
             navigation.navigate("FinishScreen", { uid: uid });
           }, 2000);
-          // @FIXME 여기에 Rest API사용하셔서 uid를 보내시면 됩니다.
+          fetch("https://localhost/api/print", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+            },
+            body: JSON.stringify(uid),
+          })
+            .then((response) => response.json())
+            .then((json) => {
+              console.log(json);
+            })
+            .catch((error) => console.log(error))
+            .finally(() => {});
         }
         setDetecting(false);
       })
